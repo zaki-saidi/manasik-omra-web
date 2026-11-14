@@ -5,10 +5,11 @@ OUT = os.path.dirname(os.path.abspath(__file__))
 VER = sys.argv[2] if len(sys.argv) > 2 else 'v134'
 s = open(SRC, encoding='utf-8').read()
 head = ('<link rel="manifest" href="manifest.webmanifest">\n'
-        '<link rel="apple-touch-icon" href="apple-touch-icon.png">\n'
-        '<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="mobile-web-app-capable" content="yes">\n'
-        '<meta name="apple-mobile-web-app-title" content="مناسك العمرة">\n'
-        '<meta name="apple-mobile-web-app-status-bar-style" content="black">\n')
+        '<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">\n'
+        '<meta name="mobile-web-app-capable" content="yes">\n'
+        # the page already sets apple-mobile-web-app-capable / title / status-bar black-translucent;
+        # black behind the status bar and the home bar: the canvas is night, the body still covers the screen
+        '<style>html{background:#0f1013}body{min-height:100vh;min-height:100dvh}</style>\n')
 assert s.count('<title>مناسك العمرة</title>') == 1
 s = s.replace('<title>مناسك العمرة</title>', '<title>مناسك العمرة</title>\n' + head, 1)
 reg = "<script>if('serviceWorker' in navigator&&location.protocol==='https:'){addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>\n"
