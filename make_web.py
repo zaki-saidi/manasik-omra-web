@@ -5,7 +5,7 @@ OUT = os.path.dirname(os.path.abspath(__file__))
 VER = sys.argv[2] if len(sys.argv) > 2 else 'v134'
 s = open(SRC, encoding='utf-8').read()
 head = ('<link rel="manifest" href="manifest.webmanifest">\n'
-        '<link rel="apple-touch-icon" sizes="180x180" href="https://zaki-saidi.github.io/manasik-omra-web/kaaba-180.png?v=3">\n'
+        '<link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,' + __import__('base64').b64encode(open(os.path.join(OUT, 'apple-touch-icon.png'), 'rb').read()).decode() + '">\n'
         '<link rel="apple-touch-icon" href="apple-touch-icon.png">\n'
         '<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">\n'
         '<meta name="mobile-web-app-capable" content="yes">\n'
