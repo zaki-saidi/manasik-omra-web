@@ -4,6 +4,16 @@ SRC = sys.argv[1] if len(sys.argv) > 1 else '/home/claude/Manasik-Omra.html'
 OUT = os.path.dirname(os.path.abspath(__file__))
 VER = sys.argv[2] if len(sys.argv) > 2 else 'v134'
 s = open(SRC, encoding='utf-8').read()
+# the adhan recordings (9 MB of the 14) become separate files, loaded only when one is played
+import base64
+os.makedirs(os.path.join(OUT, 'snd'), exist_ok=True)
+def _snd(m):
+    open(os.path.join(OUT, 'snd', m.group(1) + '.mp3'), 'wb').write(base64.b64decode(m.group(2)))
+    return m.group(1) + ":'/manasik-omra-web/snd/" + m.group(1) + ".mp3'"
+i = s.index('var ADHAN_SND={'); j = s.index('};', i)
+blk, nsub = re.subn(r"([a-z0-9]+):'data:audio/mpeg;base64,([A-Za-z0-9+/=]+)'", _snd, s[i:j])
+assert nsub >= 9, nsub
+s = s[:i] + blk + s[j:]
 head = (  # no web manifest: with one, iOS ignores apple-touch-icon and shows a letter instead of the logo
         '<link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,' + __import__('base64').b64encode(open(os.path.join(OUT, 'apple-touch-icon.png'), 'rb').read()).decode() + '">\n'
         '<link rel="icon" type="image/png" sizes="192x192" href="/manasik-omra-web/icon-192.png">\n'
@@ -22,10 +32,15 @@ sw = """/* offline copy of the home-screen app: the page opens at once from the 
    in the background, so a new version shows at the next launch; without a saved copy it comes from the network. */
 const C = 'manasik-%s';
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.add('./index.html')).then(() => self.skipWaiting())); });
-self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C && k !== C + '-snd').map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET' || e.request.mode !== 'navigate') return;
-  if (new URL(e.request.url).origin !== location.origin) return;
+  if (e.request.method !== 'GET') return;
+  const u = new URL(e.request.url); if (u.origin !== location.origin) return;
+  if (u.pathname.includes('/snd/')) {   /* adhan recordings: kept once played */
+    e.respondWith(caches.open(C + '-snd').then(c => c.match(e.request).then(hit => hit || fetch(e.request).then(res => { if (res.ok && res.status === 200) c.put(e.request, res.clone()); return res; }))));
+    return;
+  }
+  if (e.request.mode !== 'navigate') return;
   e.respondWith(caches.open(C).then(c => c.match('./index.html').then(hit => {
     const upd = fetch(e.request).then(res => { if (res.ok && !res.redirected) c.put('./index.html', res.clone()); return res; });
     if (hit) { e.waitUntil(upd.catch(() => {})); return hit; }
