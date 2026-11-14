@@ -80,6 +80,8 @@
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--marble);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.75;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--night)}
+/* in-flow content starts below the status bar (iPhone home-screen app, Android edge-to-edge); otherwise the sticky top bar slides over the band */
+body{border-top:env(safe-area-inset-top,0px) solid var(--night)}
 button,input{font-family:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:10px}
 .pat{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:var(--pat-day);background-size:96px 96px}
