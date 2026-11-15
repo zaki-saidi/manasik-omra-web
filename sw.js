@@ -1,6 +1,6 @@
 /* offline copy of the home-screen app: the page opens at once from the saved copy and is refreshed
    in the background, so a new version shows at the next launch; without a saved copy it comes from the network. */
-const C = 'manasik-v139';
+const C = 'manasik-v140';
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.add('./index.html')).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C && k !== C + '-snd').map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

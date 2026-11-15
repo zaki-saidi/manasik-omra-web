@@ -3136,10 +3136,7 @@ function ntfNativeHTML(){
   var h='';
   if(T.ntfDenied) h+='<p class="ntf-warn">'+ic('alert')+'<span>'+t('nt_denied')+'</span></p>';
   else if(T.ntfExact===false) h+='<div class="ntf-warn">'+ic('alert')+'<span>'+t('nt_exact')+'</span><button class="ntf-play" data-act="ntf-exact">'+t('nt_exact_b')+'</button></div>';
-  h+='<div class="ntf-grp"><div class="ntf-row ntf-in"><span class="ntf-l">'+t('nt_test')+'<small>'+t('nt_test_s')+'</small></span><button class="ntf-play" data-act="ntf-test">'+t('nt_test_go')+'</button></div></div>'
-   +'<details class="ntf-bat"><summary>'+ic('info')+'<span>'+t('nt_bat_t')+'</span>'+ic('chev','chev')+'</summary><ul>'+[1,2,3,4,5,6].map(function(i){return '<li>'+t('nt_bat'+i)+'</li>';}).join('')+'</ul></details>'
-   +'<p class="muted ntf-note">'+t('nt_app')+'</p>';
-  return h;
+  return h;   /* only a warning when something blocks the adhan; no test button, help list or footnote */
 }
 /* adhan reminder body: a short verse or hadith about prayer, a different one each day */
 function ntfPass(k,dn){var city=ntfPlace(), ok=function(p){return (!p.g||p.g===S.g)&&(!p.c||p.c===city)&&(k==='ishraq'||pick(p.t).length<=80);}, i=PR_KEYS.indexOf(k),
