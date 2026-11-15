@@ -233,8 +233,6 @@ button,input{font-family:inherit;color:inherit}
 .band h1{font-family:var(--f-display);font-weight:600;font-size:32px;line-height:1.45;margin:0 0 6px;text-wrap:balance}
 .band .lead{color:var(--on-night-2);margin:0;font-size:16.5px;line-height:1.45}
 #app[dir="rtl"] .band .lead{line-height:1.6}
-.band:not(.hm-band) .lead{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.band:not(.hm-band) .eyebrow{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .band .muted{color:var(--on-night-3)}
 .band .btn-ghost{background:var(--night-2);color:var(--on-night);border-color:var(--night-line-2)}
 main{padding-block:22px calc(var(--nav) + env(safe-area-inset-bottom,0px) + 34px)}
@@ -2259,7 +2257,6 @@ var U={
   ntf_pre_b:['{توضّأ|توضّئي} {واستعدّ|واستعدّي} للصلاة','Faites vos ablutions et préparez-vous à la prière','Make wudu and get ready for prayer'],
   nt_min:['{{n}} دقيقة','{{n}} min','{{n}} min'],
   nt_web:['تعمل التنبيهات في تطبيق أندرويد. تُحفظ اختياراتك الآن وتُفعَّل عند تثبيته.','Les rappels fonctionnent dans l’application Android. Vos choix sont gardés et s’activeront une fois l’application installée.','Reminders work in the Android app. Your choices are saved and will turn on once the app is installed.'],
-  nt_app:['تُبرمَج التنبيهات لثلاثة أسابيع، وتتجدّد كلما {فتحت|فتحتِ} التطبيق.','Les rappels sont programmés pour trois semaines et renouvelés à chaque ouverture de l’application.','Reminders are scheduled for three weeks and renewed each time you open the app.'],
   nt_exact:['قد يتأخّر الأذان بضع دقائق: {اسمح|اسمحي} لهذا التطبيق بـ«المنبّهات والتذكيرات».','L’adhan peut arriver avec quelques minutes de retard : autorisez « Alarmes et rappels » pour cette application.','The adhan may arrive a few minutes late: allow “Alarms & reminders” for this app.'],
   nt_exact_b:['السماح','Autoriser','Allow'],
   nt_test:['تجربة الإشعار','Tester la notification','Test the notification'],
@@ -2276,6 +2273,8 @@ var U={
   nt_bat5:['هواوي وهونر: «تشغيل التطبيقات» ← إدارة يدوية، {وفعّل|وفعّلي} الخيارات الثلاثة.','Huawei, Honor : « Lancement d’applications » → gestion manuelle, puis activez les trois options.','Huawei, Honor: “App launch” → manage manually, then turn on all three options.'],
   nt_bat6:['الأذان يتبع صوت الإشعارات: إن كان الهاتف على الصامت فلن يُسمع.','L’adhan suit le volume des notifications : en mode silencieux, il ne s’entend pas.','The adhan follows the notification volume: in silent mode it cannot be heard.'],
   ad_ask_t:['{فعّل|فعّلي} الأذان','Activer l’adhan','Turn on the adhan'],
+  ad_off_t:['الأذان لن يصلك','L’adhan ne vous parviendra pas','The adhan will not reach you'],
+  ad_retry:['السماح بالإشعارات','Autoriser les notifications','Allow notifications'],
   ad_ask:['يصلك الأذان في وقت كل صلاة، حتى والهاتف مقفل ومن دون إنترنت.','L’adhan vous parvient à l’heure de chaque prière, même téléphone verrouillé et sans Internet.','The adhan reaches you at each prayer time, even with the phone locked and offline.'],
   ad_ask_on:['تفعيل','Activer','Turn on'],
   ad_ask_later:['لاحقاً','Plus tard','Later'],
@@ -3107,7 +3106,8 @@ function sndList(list,sel,act,key){
      +(ADHAN_SND[v]?'<button class="ntf-play'+(pl?' on':'')+'" data-act="ntf-play" data-v="'+key+':'+v+'">'+t(pl?'nt_stop':'nt_play')+'</button>':'')+'</div>';}).join('')+'</div>';
 }
 function ntfHTML(){
-  var n=ntfS(), native=!!lnPlugin();
+  if(!lnPlugin()) return '';   /* browser / iPhone: no adhan, so no adhan settings */
+  var n=ntfS(), native=true;
   function sw(act,state,label){return '<button class="sw" data-act="'+act+'" role="switch" aria-checked="'+(!!state)+'" aria-label="'+label+'"><span></span></button>';}
   function line(key,label,val,act){var op=T.ntfOpen===key;
     return '<button class="ntf-pr" data-act="'+act+'" data-v="'+key+'" aria-expanded="'+op+'"><span class="ntf-pn">'+label+'</span><span class="ntf-pv">'+val+'</span>'+ic('chev','chev')+'</button>';}
@@ -3172,15 +3172,16 @@ function ntfChannels(LN,ev){
 }
 function ntfExactOk(LN){ if(!LN.checkExactNotificationSetting) return Promise.resolve(true);
   return LN.checkExactNotificationSetting().then(function(r){return !r||!r.exact_alarm||r.exact_alarm==='granted';}).catch(function(){return true;}); }
-var NTF_DAYS=21;
+var NTF_DAYS=40;   /* the adhans keep coming even if the app stays closed for weeks */
 function ntfSchedule(){
   var LN=lnPlugin(); if(!LN) return;
   var ev=ntfEvents(NTF_DAYS), ex=true; T.ntfAt=Date.now();
   Promise.resolve().then(function(){return LN.getPending();}).then(function(r){var p=((r&&r.notifications)||[]).filter(function(x){return x.id!==99;}); return p.length?LN.cancel({notifications:p.map(function(x){return {id:x.id};})}):null;}).catch(function(){})
    .then(function(){ if(!ev.length) return null;
      return LN.requestPermissions().then(function(st){
-       if(st&&st.display&&st.display!=='granted'){T.ntfDenied=true; ntfRefresh(); return null;}
-       T.ntfDenied=false;
+       var was=!!T.ntfDenied;
+       if(st&&st.display&&st.display!=='granted'){T.ntfDenied=true; ntfRefresh(); if(!was&&S.tab==='home') keepScroll(render); return null;}
+       T.ntfDenied=false; if(was&&S.tab==='home') keepScroll(render);
        return ntfExactOk(LN).then(function(ok){ex=ok; T.ntfExact=ok; ntfRefresh(); return ntfChannels(LN,ev);}).then(function(){return LN.schedule({notifications:ev.map(function(e,i){var o={id:1000+i,title:e.title,body:e.body,schedule:{at:new Date(e.at),allowWhileIdle:true},channelId:e.snd?'adhan_'+e.snd:'rappels',isExactNotification:ex};
          if(e.snd&&ADHAN_SND[e.snd.replace(/_s$/,'')]) o.sound='adhan_'+e.snd+'.mp3'; if(e.big) o.largeBody=e.big; return o;})});});
      });
@@ -3188,7 +3189,10 @@ function ntfSchedule(){
 }
 /* Android app: while no prayer has an adhan, the home page offers to turn it on (once dismissed, it stays away) */
 function adhanAskHTML(){
-  if(!lnPlugin()||S.adAsk===false) return ''; var n=ntfS();
+  if(!lnPlugin()) return ''; var n=ntfS();
+  if(T.ntfDenied&&n.master) return '<div class="card ad-ask"><div class="ad-ask-h">'+ic('alert')+'<b>'+t('ad_off_t')+'</b></div><p>'+t('nt_denied')+'</p>'
+   +'<div class="ad-ask-b"><button class="btn btn-gold" data-act="ad-retry">'+t('ad_retry')+'</button></div></div>';
+  if(S.adAsk===false) return '';
   if(n.master&&NTF_KEYS.some(function(k){return n.pv[k]!=='off';})) return '';
   return '<div class="card ad-ask"><div class="ad-ask-h">'+ic('bell')+'<b>'+t('ad_ask_t')+'</b></div><p>'+t('ad_ask')+'</p>'
    +'<div class="ad-ask-b"><button class="btn btn-gold" data-act="ad-on">'+t('ad_ask_on')+'</button><button class="btn btn-ghost" data-act="ad-later">'+t('ad_ask_later')+'</button></div></div>';
@@ -5224,6 +5228,7 @@ appEl.addEventListener('click',function(e){
       save(); ntfRefresh(); ntfSchedule();})(); break;
     case 'ntf-play': adhanPlay(v); break;
     case 'ntf-test': ntfTest(); break;
+    case 'ad-retry': ntfSchedule(); break;
     case 'ad-on': (function(){var n=ntfS(); n.master=true; PR_KEYS.forEach(function(k){n.pv[k]='makkah';}); S.adAsk=false; save(); keepScroll(render); ntfSchedule(); toast(t('ad_ask_ok'));})(); break;
     case 'ad-later': S.adAsk=false; save(); keepScroll(render); break;
     case 'ntf-exact': (function(){var LN=lnPlugin(); if(!LN||!LN.changeExactNotificationSetting) return; LN.changeExactNotificationSetting().then(function(){ntfSchedule();}).catch(function(){ntfSchedule();});})(); break;
